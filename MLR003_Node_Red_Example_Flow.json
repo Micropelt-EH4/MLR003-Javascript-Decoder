@@ -1,0 +1,172 @@
+[
+    {
+        "id": "4a78674aaf0fa47e",
+        "type": "tab",
+        "label": "MLR03 Generic Decoder",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "d839e955ffaae020",
+        "type": "debug",
+        "z": "4a78674aaf0fa47e",
+        "name": "Output",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 830,
+        "y": 80,
+        "wires": []
+    },
+    {
+        "id": "faa01844693cd7aa",
+        "type": "function",
+        "z": "4a78674aaf0fa47e",
+        "name": "MLR003 Decode from MQTT Packet",
+        "func": "function decodeMLR003Uplink(input) {\n        var output = {\n          Current_Valve_Position: input[0],\n          Flow_Sensor_Raw: input[1]*0.5,\n          Flow_Temperature: input[2]*0.5,\n          Ambient_Sensor_Raw: input[3]*0.25,\n          Ambient_Temperature: input[4]*0.25,\n          Energy_Storage: input[5]>>6 & 0x01,\n          Harvesting_Active: input[5]>>5 & 0x01,\n          Ambient_Sensor_Failure: input[5]>>4 & 0x01,\n          Flow_Sensor_Failure: input[5]>>3 & 0x01,\n          Radio_Communication_Error: input[5]>>2 & 0x01,\n          Received_Signal_Strength: input[5]>>1 & 0x01,\n          Motor_Error: input[5]>>0 & 0x01,\n          Storage_Voltage: Number((input[6]*0.02).toFixed(2)),\n          Average_Current_Consumed: input[7]*10,\n          Average_Current_Generated: input[8]*10,\n          Reference_Completed: input[9]>>4 & 0x01,\n          Operating_Mode: input[9]>>7 & 0x01,\n          Storage_Fully_Charged: input[9]>>6 & 0x01,\n        }\n        if (input.length == 11) {\n          var um = input[9] & 0x03\n          if (um == 0) {\n            var uv = input[10]\n          }\n          else {\n            var uv = input[10]*0.5\n          }\n          output.User_Mode = um\n          output.User_Value = uv\n        }\n        return output ;\n  }\n\nfunction hexToBytes(hex) {\n    for (var bytes = [], c = 0; c < hex.length; c += 2)\n        bytes.push(parseInt(hex.substr(c, 2), 16));\n    return bytes;\n}\n\n/*\nConvert Incoming Message to JSON and extract base64 Payload\n*/\nmsg = JSON.parse(msg.payload);\nvar b64_payload = msg.data;\n\n/*\nConvert base64 payload to Hex String\n*/\nconst buffer = Buffer.from(b64_payload, 'base64');\nconst hex_payload_str = buffer.toString('hex');\n\n/*\nConvert Hex String to bytes and call the Decoder function\n*/\nvar hex_payload = hexToBytes(hex_payload_str);\nvar output = decodeMLR003Uplink(hex_payload);\n\nmsg.payload = output;\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 570,
+        "y": 80,
+        "wires": [
+            [
+                "d839e955ffaae020"
+            ]
+        ]
+    },
+    {
+        "id": "db2752953edc581a",
+        "type": "json",
+        "z": "4a78674aaf0fa47e",
+        "name": "",
+        "property": "payload",
+        "action": "",
+        "pretty": false,
+        "x": 250,
+        "y": 180,
+        "wires": [
+            [
+                "2a8652cc1b5c8886"
+            ]
+        ]
+    },
+    {
+        "id": "2a8652cc1b5c8886",
+        "type": "function",
+        "z": "4a78674aaf0fa47e",
+        "name": "Extract HEX Payload",
+        "func": "msg.payload = msg.payload.data\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 300,
+        "y": 220,
+        "wires": [
+            [
+                "c904bb2ba2dc0650"
+            ]
+        ]
+    },
+    {
+        "id": "c904bb2ba2dc0650",
+        "type": "base64",
+        "z": "4a78674aaf0fa47e",
+        "name": "",
+        "action": "",
+        "property": "payload",
+        "x": 260,
+        "y": 260,
+        "wires": [
+            [
+                "c3c8b2f41bf9a9eb",
+                "76fac652a42add7e"
+            ]
+        ]
+    },
+    {
+        "id": "d174a0b798c33cd7",
+        "type": "debug",
+        "z": "4a78674aaf0fa47e",
+        "name": "Output",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 830,
+        "y": 280,
+        "wires": []
+    },
+    {
+        "id": "c3c8b2f41bf9a9eb",
+        "type": "function",
+        "z": "4a78674aaf0fa47e",
+        "name": "MLR003 Decode from HEX Payload",
+        "func": "function decodeMLR003Uplink(input) {\n        var output = {\n          Current_Valve_Position: input[0],\n          Flow_Sensor_Raw: input[1]*0.5,\n          Flow_Temperature: input[2]*0.5,\n          Ambient_Sensor_Raw: input[3]*0.25,\n          Ambient_Temperature: input[4]*0.25,\n          Energy_Storage: input[5]>>6 & 0x01,\n          Harvesting_Active: input[5]>>5 & 0x01,\n          Ambient_Sensor_Failure: input[5]>>4 & 0x01,\n          Flow_Sensor_Failure: input[5]>>3 & 0x01,\n          Radio_Communication_Error: input[5]>>2 & 0x01,\n          Received_Signal_Strength: input[5]>>1 & 0x01,\n          Motor_Error: input[5]>>0 & 0x01,\n          Storage_Voltage: Number((input[6]*0.02).toFixed(2)),\n          Average_Current_Consumed: input[7]*10,\n          Average_Current_Generated: input[8]*10,\n          Reference_Completed: input[9]>>4 & 0x01,\n          Operating_Mode: input[9]>>7 & 0x01,\n          Storage_Fully_Charged: input[9]>>6 & 0x01,\n        }\n        if (input.length == 11) {\n          var um = input[9] & 0x03\n          if (um == 0) {\n            var uv = input[10]\n          }\n          else {\n            var uv = input[10]*0.5\n          }\n          output.User_Mode = um\n          output.User_Value = uv\n        }\n        return output ;\n  }\n\nvar output = decodeMLR003Uplink(msg.payload);\n\nmsg.payload = output;\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 570,
+        "y": 280,
+        "wires": [
+            [
+                "d174a0b798c33cd7"
+            ]
+        ]
+    },
+    {
+        "id": "76fac652a42add7e",
+        "type": "debug",
+        "z": "4a78674aaf0fa47e",
+        "name": "HEX Output",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 850,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "29abbd2c1081592a",
+        "type": "mqtt in",
+        "z": "4a78674aaf0fa47e",
+        "name": "MQTT IN",
+        "topic": "lora/+/up",
+        "qos": "2",
+        "datatype": "auto",
+        "broker": "",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 100,
+        "y": 80,
+        "wires": [
+            [
+                "db2752953edc581a",
+                "faa01844693cd7aa"
+            ]
+        ]
+    }
+]
