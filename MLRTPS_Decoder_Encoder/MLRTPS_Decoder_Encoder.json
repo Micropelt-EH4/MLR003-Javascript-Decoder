@@ -1,0 +1,229 @@
+[
+    {
+        "id": "1703cb5540025786",
+        "type": "tab",
+        "label": "MLRTPS Decoder Encoder",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "c9eac89442f57694",
+        "type": "mqtt in",
+        "z": "1703cb5540025786",
+        "name": "MQTT IN",
+        "topic": "lora/+/up",
+        "qos": "2",
+        "datatype": "auto",
+        "broker": "",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 140,
+        "y": 180,
+        "wires": [
+            [
+                "cf95371b19dbea57"
+            ]
+        ]
+    },
+    {
+        "id": "cf95371b19dbea57",
+        "type": "function",
+        "z": "1703cb5540025786",
+        "name": "MLRTPS Uplink Decoder from MQTT Packet",
+        "func": "function get_spt_value(spt_byte) {\n    switch (spt_byte) {\n      case 0:\n        return \"0\";\n      case 1:\n        return \"+1\";\n      case 2:\n        return \"+2\";\n      case 3:\n        return \"+3\";\n      case 4:\n        return \"+4\";\n      case 5:\n        return \"+5\";\n      case 12:\n        return \"-4\";\n      case 13:\n        return \"-3\";\n      case 14:\n        return \"-2\";\n      case 15:\n        return \"-1\";\n      case 255:\n        return \"Freeze Protection 6°\";\n      default:\n        return \"0\";\n    }\n  }\n  \nfunction decode_port_1(input) {\nvar output = {\n          Ambient_Temperature: input[0] * 0.25,\n          PIR_Status: input[1]>>5 & 0x01,\n          Energy_Storage_Low: input[1]>>4 & 0x01,\n          Radio_Communication_Error: input[1]>>3 & 0x01,\n          Radio_Signal_Strength: input[1]>>2 & 0x01,\n          PIR_Sensor_Failure: input[1]>>1 & 0x01,\n          Ambient_Temperature_Failure: input[1] & 0x01,\n          Storage_Voltage: Number((input[2]*0.02).toFixed(2)),\n          Set_Point_Temperature_Value: get_spt_value(input[3])\n        };\n  return output;\n}\n\n\nfunction decode_port_2(input) {\n  var output = {};\n  {\n    var REV_Major = (input[0] & 0xF).toString();\n    var REV_Minor = ((input[0] >> 4) & 0xF).toString(16);\n    output.REV = REV_Major + \".\" + REV_Minor;\n  }\n  {\n    var HW_Major = (input[1] & 0xF).toString();\n    var HW_Minor = ((input[1] >> 4) & 0xF).toString();\n    output.HW = HW_Major + \".\" + HW_Minor;\n  }\n  {\n    var FW_Year = input[2].toString();\n    var FW_Month = input[3].toString();\n    var FW_Day = input[4].toString();\n    var FW_Minor = input[5].toString();\n    output.FW = \"20\" + FW_Year + \".\" + FW_Month + \".\" + FW_Day + \".\" + FW_Minor;\n  }\n  return output;\n}\n\nfunction Decode(fPort, bytes) {\n  var output = {};\n  switch (fPort) {\n    case 1:\n      output = decode_port_1(bytes);\n      break;\n    case 2:\n      output = decode_port_2(bytes);\n      break;\n    default:\n      return {\n        errors: ['unknown FPort'],\n      };\n  }\n  return output;\n}\n\nfunction hexToBytes(hex) {\n    for (var bytes = [], c = 0; c < hex.length; c += 2)\n        bytes.push(parseInt(hex.substr(c, 2), 16));\n    return bytes;\n}\n\n/*\nConvert Incoming Message to JSON and extract base64 Payload\n*/\nmsg = JSON.parse(msg.payload);\nvar b64_payload = msg.data;\nvar fport = msg.port;\n\n/*\nConvert base64 payload to Hex String\n*/\nconst buffer = Buffer.from(b64_payload, 'base64');\nconst hex_payload_str = buffer.toString('hex');\n\n/*\nConvert Hex String to bytes and call the Decoder function\n*/\nvar hex_payload = hexToBytes(hex_payload_str);\nvar output = Decode(fport,hex_payload);\n\nmsg.payload = output;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 470,
+        "y": 180,
+        "wires": [
+            [
+                "54e5d55193901b94"
+            ]
+        ]
+    },
+    {
+        "id": "54e5d55193901b94",
+        "type": "debug",
+        "z": "1703cb5540025786",
+        "name": "Uplink",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1130,
+        "y": 180,
+        "wires": []
+    },
+    {
+        "id": "67cd378227250e5c",
+        "type": "comment",
+        "z": "1703cb5540025786",
+        "name": "Make sure to set the MQTT settings correspondingly in the MQTT IN and OUT Node",
+        "info": "",
+        "x": 350,
+        "y": 80,
+        "wires": []
+    },
+    {
+        "id": "d44c078adc26046b",
+        "type": "comment",
+        "z": "1703cb5540025786",
+        "name": "Fill in the MQTT topic as required",
+        "info": "",
+        "x": 190,
+        "y": 120,
+        "wires": []
+    },
+    {
+        "id": "2cb5a12e3cc40b76",
+        "type": "comment",
+        "z": "1703cb5540025786",
+        "name": "Install \"base64\" node",
+        "info": "",
+        "x": 160,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "8dd8eaeea80d724a",
+        "type": "inject",
+        "z": "1703cb5540025786",
+        "name": "Downlink Message",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "deveui",
+                "v": "",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{\"fPort\":2}",
+        "payloadType": "json",
+        "x": 170,
+        "y": 340,
+        "wires": [
+            [
+                "b5c1b9b59906c74a"
+            ]
+        ]
+    },
+    {
+        "id": "ba31d5932ecd503d",
+        "type": "mqtt out",
+        "z": "1703cb5540025786",
+        "name": "MQTT OUT",
+        "topic": "",
+        "qos": "1",
+        "retain": "false",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "",
+        "x": 1150,
+        "y": 340,
+        "wires": []
+    },
+    {
+        "id": "b5c1b9b59906c74a",
+        "type": "function",
+        "z": "1703cb5540025786",
+        "name": "MLRTPS Downlink Encoder",
+        "func": "function encode_port_2() {\n  return [];\n}\n\n// Encode downlink function.\n//\n// Input is an object with the following fields:\n// - output = Object representing the payload that must be encoded.\n// - variables = Object containing the configured device variables.\n//\n// Output must be an object with the following fields:\n// - bytes = Byte array containing the downlink payload.\nfunction encodeDownlink(input) {\n  let port = Number(input.fPort);\n  var downlink;\n  switch (port) {\n    case 2:\n      downlink = encode_port_2();\n      break;\n    default:\n      return {\n        errors: ['unknown FPort'],\n      };\n  }\n  \n  return {\n    bytes: Buffer.from(downlink),\n    fPort: input.fPort\n  };\n}\n\n\nmsg.payload = encodeDownlink(msg.payload);\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 420,
+        "y": 340,
+        "wires": [
+            [
+                "a663e06fef162e0c"
+            ]
+        ]
+    },
+    {
+        "id": "dfd2e4f59b71f916",
+        "type": "debug",
+        "z": "1703cb5540025786",
+        "name": "Downlink",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1140,
+        "y": 400,
+        "wires": []
+    },
+    {
+        "id": "8b63420fd36c5f99",
+        "type": "function",
+        "z": "1703cb5540025786",
+        "name": "Multitech Downlink Message Structure",
+        "func": "msg.payload = {\n      \"deveui\": msg.deveui,\n      \"port\": msg.payload.fPort,\n      \"data\": msg.payload.bytes,\n}\n\nmsg.topic = \"lora/\" + msg.deveui + \"/down\";\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 890,
+        "y": 340,
+        "wires": [
+            [
+                "dfd2e4f59b71f916",
+                "ba31d5932ecd503d"
+            ]
+        ]
+    },
+    {
+        "id": "a663e06fef162e0c",
+        "type": "base64",
+        "z": "1703cb5540025786",
+        "name": "",
+        "action": "",
+        "property": "payload.bytes",
+        "x": 640,
+        "y": 340,
+        "wires": [
+            [
+                "8b63420fd36c5f99"
+            ]
+        ]
+    },
+    {
+        "id": "3a043e97ecb221c2",
+        "type": "comment",
+        "z": "1703cb5540025786",
+        "name": "Enter the DEV EUI in the \"Downlink Message\" Inject node",
+        "info": "",
+        "x": 270,
+        "y": 280,
+        "wires": []
+    }
+]

@@ -1,11 +1,26 @@
 # MLR003-Javascript-Decoder
-This repository contains generic Javascript code for decoding MLR003 packets
+This repository contains Node-RED flows and Javascript code for decoding Micropelt MLR003R,MLRTPS and MLRTS devices.
 
-`MLR003_Node_Red_Example_Flow.json` provides an example Node-Red Flow to test the decoder fucntions
-Make sure to modify the MQTT settings as needed
+## Repository Structure
 
-`mlr003_generic_decoder.js` contains code to decode the payload coming directly from the gateway
-The Mutlitech Gateway sends the base64 payload in the "data" field.
-Modify the field according your gateway input
+The encoders and decoders are organized into three main folders, each representing the product line. Inside each folder, you will find:
 
-`mlr003_hex_decoder.js` contains the only the decoder function. If you already have the HEX payload, just call this this function with the HEX payload as the input
+- Sample Node_RED flow in `.json` format
+- Two JavaScript files for the Encoder and Decoder
+
+### Folder Layout
+- MLR003_Decoder_Encoder
+  - MLR003R_Decoder_Encoder.json 
+  - MLR003R_decoder.js 
+  - MLR003R_encoder.js 
+
+- MLRTPS_Decoder_Encoder
+  - MLRTPS_Decoder_Encoder.json
+  - MLRTPS_decoder.js
+  - MLRTPS_encoder.js
+
+- MLRTS_Decoder_Encoder
+  - MLRTS_Decoder_Encoder.json
+  - MLRTS_decoder.js
+  - MLRTS_encoder.js
+  
